@@ -18,81 +18,89 @@
       <div class="logo">
         <span class="logo-icon">✨</span>
         <h1>微光文字雲</h1>
-        <span class="badge">PRO</span>
+        <span class="badge">LIVE</span>
       </div>
-      <p class="subtitle">將文字轉化為視覺藝術，為您的簡報與創作增添魅力</p>
+      <p class="subtitle">輸入字詞，與大家一起共創微光耀眼的線上文字雲</p>
     </header>
 
     <!-- Main Workspace -->
     <main class="workspace">
       <!-- Control Panel -->
       <section class="control-panel glass">
-        <h2>設計面板</h2>
         
-        <!-- Text Input -->
-        <div class="control-group">
-          <label for="text-input">原始文本</label>
-          <textarea id="text-input" placeholder="請在此貼上您的文章或文字內容...&#10;支援中文與英文分詞分析。"></textarea>
-          <div class="text-actions">
-            <button id="btn-example" class="btn btn-secondary">使用範例文章</button>
-            <button id="btn-clear" class="btn btn-secondary">清空內容</button>
-          </div>
-        </div>
-
-        <!-- Customizations -->
-        <div class="control-group">
-          <label for="color-palette">色彩主題</label>
-          <div class="select-wrapper">
-            <select id="color-palette">
-              <option value="cyberpunk">霓虹科技 (Cyberpunk)</option>
-              <option value="sunset">暖陽晚霞 (Sunset Glow)</option>
-              <option value="ocean">深海呼吸 (Ocean Breeze)</option>
-              <option value="forest">山林晨曦 (Forest Morning)</option>
-              <option value="minimalist">沉穩極簡 (Classic Dark)</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="control-group">
-          <label for="font-family">字體風格</label>
-          <div class="select-wrapper">
-            <select id="font-family">
-              <option value="Outfit, 'Noto Sans TC', sans-serif">現代時尚 (Outfit / Noto Sans)</option>
-              <option value="'Playfair Display', 'Georgia', serif">典雅古典 (Serif)</option>
-              <option value="'Courier New', monospace">極客代碼 (Monospace)</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="control-grid">
+        <!-- Submission Section -->
+        <div class="panel-section">
+          <h2>寫下您的文字</h2>
           <div class="control-group">
-            <label for="max-words">最大字數</label>
-            <input type="number" id="max-words" min="10" max="200" value="70">
+            <textarea id="text-input" placeholder="請在此輸入一小段話（如您對智慧教育的看法、祝福、或任何心情），提交後會自動加入全域文字雲！"></textarea>
+            <button id="btn-submit" class="btn btn-primary btn-submit-db">
+              <span class="btn-icon">🚀</span> 提交到全域文字雲
+            </button>
           </div>
+        </div>
+
+        <!-- Customizations Section -->
+        <div class="panel-section">
+          <h2>設計面板</h2>
           <div class="control-group">
-            <label for="word-orientation">文字排版</label>
+            <label for="color-palette">色彩主題</label>
             <div class="select-wrapper">
-              <select id="word-orientation">
-                <option value="mixed">橫豎混合</option>
-                <option value="horizontal">水平排列</option>
-                <option value="vertical">垂直排列</option>
+              <select id="color-palette">
+                <option value="cyberpunk">霓虹科技 (Cyberpunk)</option>
+                <option value="sunset">暖陽晚霞 (Sunset Glow)</option>
+                <option value="ocean">深海呼吸 (Ocean Breeze)</option>
+                <option value="forest">山林晨曦 (Forest Morning)</option>
+                <option value="minimalist">沉穩極簡 (Classic Dark)</option>
               </select>
             </div>
           </div>
+
+          <div class="control-group">
+            <label for="font-family">字體風格</label>
+            <div class="select-wrapper">
+              <select id="font-family">
+                <option value="Outfit, 'Noto Sans TC', sans-serif">現代時尚 (Outfit / Noto Sans)</option>
+                <option value="'Playfair Display', 'Georgia', serif">典雅古典 (Serif)</option>
+                <option value="'Courier New', monospace">極客代碼 (Monospace)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="control-grid">
+            <div class="control-group">
+              <label for="max-words">最大字數</label>
+              <input type="number" id="max-words" min="10" max="200" value="70">
+            </div>
+            <div class="control-group">
+              <label for="word-orientation">文字排版</label>
+              <div class="select-wrapper">
+                <select id="word-orientation">
+                  <option value="mixed">橫豎混合</option>
+                  <option value="horizontal">水平排列</option>
+                  <option value="vertical">垂直排列</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <label class="checkbox-container">
+              <input type="checkbox" id="filter-stopwords" checked>
+              <span class="checkmark"></span>
+              過濾常用虛字與助詞 (的/了/和/the/and)
+            </label>
+          </div>
         </div>
 
-        <div class="control-group">
-          <label class="checkbox-container">
-            <input type="checkbox" id="filter-stopwords" checked>
-            <span class="checkmark"></span>
-            過濾常用虛字與助詞 (的/了/和/the/and)
-          </label>
+        <!-- Database Info Section -->
+        <div class="panel-section">
+          <h2>連線狀態</h2>
+          <div class="db-status-container">
+            <span class="pulse-dot green" id="status-dot"></span>
+            <span id="status-text">連線正常 (即時同步中)</span>
+          </div>
+          <p id="total-count-text">累計收集：載入中...</p>
         </div>
-
-        <!-- Action Button -->
-        <button id="btn-generate" class="btn btn-primary">
-          <span class="btn-icon">⚡</span> 產生文字雲
-        </button>
       </section>
 
       <!-- Canvas / Viewport -->
@@ -103,22 +111,30 @@
             <span class="dot yellow"></span>
             <span class="dot green"></span>
           </div>
-          <div class="viewport-title">畫布預覽</div>
+          <div class="viewport-title">即時共創畫布</div>
           <button id="btn-download" class="btn btn-secondary btn-icon-only" title="下載為圖片">
             📥 下載 PNG
           </button>
         </div>
         
         <div class="canvas-container">
-          <canvas id="wordcloud-canvas" width="800" height="550"></canvas>
+          <canvas id="wordcloud-canvas" width="800" height="500"></canvas>
           <div id="loading-overlay" class="hidden">
             <div class="spinner"></div>
-            <p>正在分析文本並繪製微光雲...</p>
+            <p>正在分析資料庫並繪製微光雲...</p>
           </div>
           <div id="empty-state">
-            <div class="empty-icon">🎨</div>
-            <h3>探索微光文字雲</h3>
-            <p>在左側輸入文字並點擊「產生文字雲」開始設計</p>
+            <div class="empty-icon">🌍</div>
+            <h3>等待資料庫內容</h3>
+            <p>正在從 Firebase 載入全域文字雲資料...</p>
+          </div>
+        </div>
+
+        <!-- Recent Submissions Section -->
+        <div class="recent-submissions-section">
+          <h3>💬 大家最近寫了些什麼...</h3>
+          <div id="recent-list" class="recent-list">
+            <div class="recent-item-empty">載入最近留言中...</div>
           </div>
         </div>
       </section>
@@ -126,11 +142,11 @@
 
     <!-- Footer -->
     <footer class="app-footer">
-      <p>© 2026 微光文字雲 · 部署於 Firebase Hosting · 儲存於 GitHub</p>
+      <p>© 2026 微光文字雲 · 連接 Firebase Firestore · 部署於 Firebase Hosting · 儲存於 GitHub</p>
     </footer>
   </div>
 
   <!-- Scripts -->
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>

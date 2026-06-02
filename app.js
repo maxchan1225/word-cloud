@@ -1,13 +1,24 @@
-/**
- * 微光文字雲 - Core Application Logic
- */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+// --- Firebase Configuration ---
+const firebaseConfig = {
+  projectId: "teachingtest-49f7a",
+  appId: "1:354918792935:web:2e74c8744f3bf7c544ec42",
+  storageBucket: "teachingtest-49f7a.firebasestorage.app",
+  apiKey: "AIzaSyBElQCJTn7DREGG9e_fw8J0RneEqxjHS1o",
+  authDomain: "teachingtest-49f7a.firebaseapp.com",
+  messagingSenderId: "354918792935"
+};
+
+// Initialize Firebase & Firestore
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 document.addEventListener('DOMContentLoaded', () => {
   // --- DOM Elements ---
   const textInput = document.getElementById('text-input');
-  const btnExample = document.getElementById('btn-example');
-  const btnClear = document.getElementById('btn-clear');
-  const btnGenerate = document.getElementById('btn-generate');
+  const btnSubmit = document.getElementById('btn-submit');
   const btnDownload = document.getElementById('btn-download');
   const colorPaletteSelect = document.getElementById('color-palette');
   const fontFamilySelect = document.getElementById('font-family');
@@ -20,13 +31,14 @@ document.addEventListener('DOMContentLoaded', () => {
   
   const loadingOverlay = document.getElementById('loading-overlay');
   const emptyState = document.getElementById('empty-state');
+  
+  const statusDot = document.getElementById('status-dot');
+  const statusText = document.getElementById('status-text');
+  const totalCountText = document.getElementById('total-count-text');
+  const recentList = document.getElementById('recent-list');
 
-  // --- Example Text ---
-  const exampleText = `人工智慧（AI）正在深刻改變我們的世界。從自動駕駛汽車到醫療診斷，從智慧家居到創意寫作，AI 的應用已經滲透到各行各業。教育領域也正在迎來一場革命。AI 賦能的個人化學習系統，能夠根據每個學生的進度、興趣和理解能力，提供客製化的學習資源與輔導，實現真正的因材施教。
-
-然而，隨著 AI 技術的飛速發展，我們也面臨著焦慮與挑戰。教師開始擔心自己是否會被 AI 替代？學生是否會過度依賴智慧工具而失去獨立思考能力？面對這些焦慮，我們需要認識到，AI 的定位是「教學助手」與「思維放大器」，而不是替代者。教師的溫度、同理心、引導思維以及人文關懷，是任何人工智慧都無法取代的核心價值。
-
-未來的教育將會是人機協同的教育。教師學會善用 AI，將日常重複性的評分、備課工作交給智慧工具，釋放出更多時間來關注學生的身心健康，引導學生進行深度學習、批判性思考與團隊合作。我們應該主動從焦慮走向賦能，將技術轉化為提升教學效率與學習品質的強大引擎，攜手開創智慧教育的新典範。`;
+  // Memory cache of submissions
+  let allSubmissions = [];
 
   // --- HSL Color Palettes ---
   const palettes = {
@@ -82,95 +94,166 @@ document.addEventListener('DOMContentLoaded', () => {
     'had', 'do', 'does', 'did', 'but', 'or', 'so', 'if', 'as', 'at', 'an', 'not'
   ]);
 
-  // --- Event Listeners ---
-  btnExample.addEventListener('click', () => {
-    textInput.value = exampleText;
+  // --- Initialize Realtime Firestore Listener ---
+  const colRef = collection(db, "submissions");
+  const q = query(colRef, orderBy("timestamp", "desc"), limit(200));
+
+  onSnapshot(q, (snapshot) => {
+    allSubmissions = [];
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      allSubmissions.push({
+        id: doc.id,
+        text: data.text || "",
+        timestamp: data.timestamp ? data.timestamp.toDate() : new Date()
+      });
+    });
+
+    // Update Connection & Counter Status
+    statusDot.className = "pulse-dot green";
+    statusText.innerText = "連線正常 (即時同步中)";
+    totalCountText.innerText = `累計收集：${allSubmissions.length} 筆資料`;
+
+    // Process and render Word Cloud
+    updateWordCloudDisplay();
+    // Update Recent Submissions List
+    updateRecentListDisplay();
+  }, (error) => {
+    console.error("Firestore error:", error);
+    statusDot.className = "pulse-dot red";
+    statusText.innerText = "連線失敗";
   });
 
-  btnClear.addEventListener('click', () => {
-    textInput.value = '';
-    emptyState.classList.remove('hidden');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-  });
-
-  btnGenerate.addEventListener('click', generateWordCloud);
-  btnDownload.addEventListener('click', downloadCanvas);
-
-  // --- Core Word Cloud Generator ---
-  async function generateWordCloud() {
+  // --- Submit Text to Firestore ---
+  btnSubmit.addEventListener('click', async () => {
     const text = textInput.value.trim();
     if (!text) {
-      alert('請先輸入或貼上文字內容！');
+      alert("請輸入一些文字後再提交！");
       return;
     }
 
-    // Show loading
+    try {
+      btnSubmit.disabled = true;
+      btnSubmit.innerText = "正在提交...";
+      
+      await addDoc(colRef, {
+        text: text,
+        timestamp: serverTimestamp()
+      });
+
+      textInput.value = "";
+    } catch (e) {
+      console.error("Error adding document: ", e);
+      alert("提交失敗，請檢查網路連線。");
+    } finally {
+      btnSubmit.disabled = false;
+      btnSubmit.innerHTML = `<span class="btn-icon">🚀</span> 提交到全域文字雲`;
+    }
+  });
+
+  // --- Redraw on Design Settings Change ---
+  [colorPaletteSelect, fontFamilySelect, maxWordsInput, wordOrientationSelect, filterStopwordsCheck].forEach(el => {
+    el.addEventListener('change', updateWordCloudDisplay);
+  });
+
+  // --- PNG Download Handler ---
+  btnDownload.addEventListener('click', downloadCanvas);
+
+  // --- Render Orchestrator ---
+  function updateWordCloudDisplay() {
+    if (allSubmissions.length === 0) {
+      emptyState.classList.remove('hidden');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      return;
+    }
+
     loadingOverlay.classList.remove('hidden');
     emptyState.classList.add('hidden');
     
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Run processing asynchronously to avoid blocking UI thread
+    // Run layout asynchronously to keep interface responsive
     setTimeout(() => {
       try {
-        const words = processText(text);
+        // Aggregate all submissions into one text block
+        const combinedText = allSubmissions.map(s => s.text).join(" ");
+        const words = processText(combinedText);
+        
         if (words.length === 0) {
-          alert('未能從文本中提取到足夠的字詞，請更換內容後再試一次！');
-          loadingOverlay.classList.add('hidden');
           emptyState.classList.remove('hidden');
-          return;
+        } else {
+          drawCloud(words);
         }
-
-        drawCloud(words);
       } catch (error) {
-        console.error(error);
-        alert('生成文字雲時出錯：' + error.message);
+        console.error("Error generating word cloud: ", error);
       } finally {
         loadingOverlay.classList.add('hidden');
       }
-    }, 100);
+    }, 50);
   }
 
-  // --- Natural Language Parsing & Frequency Analysis ---
+  // --- Recent Submissions Render ---
+  function updateRecentListDisplay() {
+    recentList.innerHTML = "";
+    
+    if (allSubmissions.length === 0) {
+      recentList.innerHTML = `<div class="recent-item-empty">尚無資料，快來輸入第一筆吧！</div>`;
+      return;
+    }
+
+    // Display the 8 most recent submissions
+    const recentItems = allSubmissions.slice(0, 8);
+    recentItems.forEach(item => {
+      const itemEl = document.createElement("div");
+      itemEl.className = "recent-item";
+
+      const timeString = formatTimeAgo(item.timestamp);
+      
+      itemEl.innerHTML = `
+        <div class="recent-item-text">${escapeHTML(item.text)}</div>
+        <div class="recent-item-meta">
+          <span>匿名使用者</span>
+          <span>${timeString}</span>
+        </div>
+      `;
+      recentList.appendChild(itemEl);
+    });
+  }
+
+  // --- Natural Language Tokenizer ---
   function processText(text) {
     const filterStopwords = filterStopwordsCheck.checked;
     
-    // Simple multilingual tokenizer (matches words/ideograms)
-    // Chinese characters: \u4e00-\u9fa5
-    // English words: [a-zA-Z]+
+    // Tokenizes Chinese phrases (2-4 characters) and English words
     const regex = /[\u4e00-\u9fa5]{2,4}|[a-zA-Z]+/g;
-    
     const matches = text.match(regex) || [];
     const freqMap = {};
 
     matches.forEach(token => {
       let word = token.trim();
       
-      // If English, convert to lowercase
+      // Normalize English words
       if (/^[a-zA-Z]+$/.test(word)) {
         word = word.toLowerCase();
       }
 
-      // Filter stop words and short symbols
       if (word.length < 2) return;
       if (filterStopwords && stopWords.has(word)) return;
 
       freqMap[word] = (freqMap[word] || 0) + 1;
     });
 
-    // Convert to sorted array
     const sortedWords = Object.keys(freqMap).map(word => ({
       text: word,
       weight: freqMap[word]
     })).sort((a, b) => b.weight - a.weight);
 
-    // Limit size
-    const limit = parseInt(maxWordsInput.value, 10) || 70;
-    return sortedWords.slice(0, limit);
+    const limitCount = parseInt(maxWordsInput.value, 10) || 70;
+    return sortedWords.slice(0, limitCount);
   }
 
-  // --- Layout Spiraling & Bounding Box Collision Checking ---
+  // --- Layout Archimedean Spiral & Collision Engine ---
   function drawCloud(words) {
     const palette = palettes[colorPaletteSelect.value] || palettes.cyberpunk;
     const fontFamily = fontFamilySelect.value;
@@ -182,22 +265,19 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const placedWords = [];
 
-    // Scale mapping values
     const maxWeight = words[0].weight;
     const minWeight = words[words.length - 1].weight;
     
-    const maxFontSize = 75;
-    const minFontSize = 14;
+    const maxFontSize = 68;
+    const minFontSize = 13;
 
     words.forEach((word, index) => {
-      // Determine font size linearly based on weight
       let fontSize = minFontSize;
       if (maxWeight !== minWeight) {
         fontSize = minFontSize + ((word.weight - minWeight) / (maxWeight - minWeight)) * (maxFontSize - minFontSize);
       }
       
-      // Select randomized orientation based on mode
-      let rotate = 0; // 0 = Horizontal, Math.PI / 2 = Vertical
+      let rotate = 0;
       if (orientation === 'vertical') {
         rotate = Math.PI / 2;
       } else if (orientation === 'mixed') {
@@ -207,37 +287,31 @@ document.addEventListener('DOMContentLoaded', () => {
       ctx.font = `bold ${Math.round(fontSize)}px ${fontFamily}`;
       const textMetrics = ctx.measureText(word.text);
       
-      // Simple bounding box calculations
       const wordWidth = rotate === 0 ? textMetrics.width + 10 : fontSize + 10;
       const wordHeight = rotate === 0 ? fontSize + 10 : textMetrics.width + 10;
 
-      // Archimedean Spiral parameters
       let theta = 0;
       let radius = 0;
-      const step = 0.15; // Angular step
-      const spacing = 4.5; // Spiral spacing
+      const step = 0.15;
+      const spacing = 4.0;
       
       let x = center.x;
       let y = center.y;
       let collision = true;
       let attempts = 0;
-      const maxAttempts = 1500;
+      const maxAttempts = 1800;
 
       while (collision && attempts < maxAttempts) {
         attempts++;
-        
-        // Calculate spiral coordinates
         radius = spacing * theta;
         x = center.x + radius * Math.cos(theta) - wordWidth / 2;
         y = center.y + radius * Math.sin(theta) - wordHeight / 2;
 
-        // Check if out of canvas bounds
         if (x < 10 || x + wordWidth > width - 10 || y < 10 || y + wordHeight > height - 10) {
           theta += step;
           continue;
         }
 
-        // Bounding box collision checking
         collision = false;
         for (let i = 0; i < placedWords.length; i++) {
           const other = placedWords[i];
@@ -254,7 +328,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       if (!collision) {
-        // Safe place found! Store position
         placedWords.push({
           x: x,
           y: y,
@@ -262,15 +335,12 @@ document.addEventListener('DOMContentLoaded', () => {
           height: wordHeight
         });
 
-        // Pick color from palette
         const colorToken = palette[index % palette.length];
-        // Add subtle variation to lightness & saturation
         const h = colorToken.h;
         const s = Math.min(100, Math.max(30, colorToken.s + Math.floor(Math.random() * 20) - 10));
         const l = Math.min(90, Math.max(40, colorToken.l + Math.floor(Math.random() * 20) - 10));
         
         ctx.save();
-        // Translate to the middle of the word bounding box for rotation
         ctx.translate(x + wordWidth / 2, y + wordHeight / 2);
         ctx.rotate(rotate);
         
@@ -278,10 +348,9 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         
-        // Set glow shadow for top words
-        if (index < 5) {
-          ctx.shadowColor = `hsla(${h}, ${s}%, ${l}%, 0.45)`;
-          ctx.shadowBlur = 10;
+        if (index < 6) {
+          ctx.shadowColor = `hsla(${h}, ${s}%, ${l}%, 0.5)`;
+          ctx.shadowBlur = 12;
         }
         
         ctx.fillText(word.text, 0, 0);
@@ -290,16 +359,38 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // --- PNG Exporter ---
+  // --- Helper Functions ---
+  function formatTimeAgo(date) {
+    const seconds = Math.floor((new Date() - date) / 1000);
+    if (seconds < 5) return "剛剛";
+    if (seconds < 60) return `${seconds} 秒前`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} 分鐘前`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} 小時前`;
+    const days = Math.floor(hours / 24);
+    return `${days} 天前`;
+  }
+
+  function escapeHTML(str) {
+    return str.replace(/[&<>'"]/g, 
+      tag => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        "'": '&#39;',
+        '"': '&quot;'
+      }[tag] || tag)
+    );
+  }
+
   function downloadCanvas() {
-    if (emptyState.classList.contains('hidden') === false) {
-      alert('請先產生文字雲再下載！');
+    if (allSubmissions.length === 0) {
+      alert("尚無資料庫內容，無法下載文字雲！");
       return;
     }
-    
-    // Create link and download
     const link = document.createElement('a');
-    link.download = `microcloud-wordcloud-${Date.now()}.png`;
+    link.download = `live-wordcloud-${Date.now()}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
   }
