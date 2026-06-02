@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>微光文字雲 | Premium Word Cloud Generator</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo">
+        <span class="logo-icon">✨</span>
+        <h1>微光文字雲</h1>
+        <span class="badge">PRO</span>
+      </div>
+      <p class="subtitle">將文字轉化為視覺藝術，為您的簡報與創作增添魅力</p>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="workspace">
+      <!-- Control Panel -->
+      <section class="control-panel glass">
+        <h2>設計面板</h2>
+        
+        <!-- Text Input -->
+        <div class="control-group">
+          <label for="text-input">原始文本</label>
+          <textarea id="text-input" placeholder="請在此貼上您的文章或文字內容...&#10;支援中文與英文分詞分析。"></textarea>
+          <div class="text-actions">
+            <button id="btn-example" class="btn btn-secondary">使用範例文章</button>
+            <button id="btn-clear" class="btn btn-secondary">清空內容</button>
+          </div>
+        </div>
+
+        <!-- Customizations -->
+        <div class="control-group">
+          <label for="color-palette">色彩主題</label>
+          <div class="select-wrapper">
+            <select id="color-palette">
+              <option value="cyberpunk">霓虹科技 (Cyberpunk)</option>
+              <option value="sunset">暖陽晚霞 (Sunset Glow)</option>
+              <option value="ocean">深海呼吸 (Ocean Breeze)</option>
+              <option value="forest">山林晨曦 (Forest Morning)</option>
+              <option value="minimalist">沉穩極簡 (Classic Dark)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label for="font-family">字體風格</label>
+          <div class="select-wrapper">
+            <select id="font-family">
+              <option value="Outfit, 'Noto Sans TC', sans-serif">現代時尚 (Outfit / Noto Sans)</option>
+              <option value="'Playfair Display', 'Georgia', serif">典雅古典 (Serif)</option>
+              <option value="'Courier New', monospace">極客代碼 (Monospace)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="control-grid">
+          <div class="control-group">
+            <label for="max-words">最大字數</label>
+            <input type="number" id="max-words" min="10" max="200" value="70">
+          </div>
+          <div class="control-group">
+            <label for="word-orientation">文字排版</label>
+            <div class="select-wrapper">
+              <select id="word-orientation">
+                <option value="mixed">橫豎混合</option>
+                <option value="horizontal">水平排列</option>
+                <option value="vertical">垂直排列</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label class="checkbox-container">
+            <input type="checkbox" id="filter-stopwords" checked>
+            <span class="checkmark"></span>
+            過濾常用虛字與助詞 (的/了/和/the/and)
+          </label>
+        </div>
+
+        <!-- Action Button -->
+        <button id="btn-generate" class="btn btn-primary">
+          <span class="btn-icon">⚡</span> 產生文字雲
+        </button>
+      </section>
+
+      <!-- Canvas / Viewport -->
+      <section class="viewport glass">
+        <div class="viewport-header">
+          <div class="status-dots">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+          <div class="viewport-title">畫布預覽</div>
+          <button id="btn-download" class="btn btn-secondary btn-icon-only" title="下載為圖片">
+            📥 下載 PNG
+          </button>
+        </div>
+        
+        <div class="canvas-container">
+          <canvas id="wordcloud-canvas" width="800" height="550"></canvas>
+          <div id="loading-overlay" class="hidden">
+            <div class="spinner"></div>
+            <p>正在分析文本並繪製微光雲...</p>
+          </div>
+          <div id="empty-state">
+            <div class="empty-icon">🎨</div>
+            <h3>探索微光文字雲</h3>
+            <p>在左側輸入文字並點擊「產生文字雲」開始設計</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>© 2026 微光文字雲 · 部署於 Firebase Hosting · 儲存於 GitHub</p>
+    </footer>
+  </div>
+
+  <!-- Scripts -->
+  <script src="app.js"></script>
+</body>
+</html>
